@@ -10,6 +10,8 @@ interface ClientData {
   address: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const ClientForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -34,7 +36,7 @@ const ClientForm = () => {
   const fetchClient = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/clients/${id}`, {
+      const response = await fetch(`${API_BASE}/clients/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -69,7 +71,7 @@ const ClientForm = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const url = isEdit ? `/api/clients/${id}` : '/api/clients';
+      const url = isEdit ? `${API_BASE}/clients/${id}` : `${API_BASE}/clients`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

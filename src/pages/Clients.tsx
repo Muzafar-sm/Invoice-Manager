@@ -12,6 +12,8 @@ interface Client {
   createdAt: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ const Clients = () => {
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/clients', {
+      const response = await fetch(`${API_BASE}/clients`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -48,7 +50,7 @@ const Clients = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/clients/${id}`, {
+      const response = await fetch(`${API_BASE}/clients/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

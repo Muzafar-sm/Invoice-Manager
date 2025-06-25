@@ -36,6 +36,8 @@ interface DashboardStats {
   };
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ const Dashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/dashboard/stats', {
+      const response = await fetch(`${API_BASE}/dashboard/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

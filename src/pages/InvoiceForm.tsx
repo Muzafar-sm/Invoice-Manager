@@ -27,6 +27,8 @@ interface InvoiceData {
   status: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const InvoiceForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -62,7 +64,7 @@ const InvoiceForm = () => {
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/clients', {
+      const response = await fetch(`${API_BASE}/clients`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -80,7 +82,7 @@ const InvoiceForm = () => {
   const fetchInvoice = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/invoices/${id}`, {
+      const response = await fetch(`${API_BASE}/invoices/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -156,7 +158,7 @@ const InvoiceForm = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const url = isEdit ? `/api/invoices/${id}` : '/api/invoices';
+      const url = isEdit ? `${API_BASE}/invoices/${id}` : `${API_BASE}/invoices`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

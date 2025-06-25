@@ -38,6 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -49,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUser = async (token: string) => {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${API_BASE}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -70,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (userData: RegisterData) => {
-    const response = await fetch('/api/auth/register', {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

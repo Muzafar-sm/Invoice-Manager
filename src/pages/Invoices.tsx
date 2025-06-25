@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
 
 interface Invoice {
   _id: string;
@@ -16,6 +16,8 @@ interface Invoice {
   createdAt: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const Invoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ const Invoices = () => {
   const fetchInvoices = async () => {
     try {
       const token = localStorage.getItem('token');
-      let url = '/api/invoices';
+      let url = `${API_BASE}/invoices`;
       if (statusFilter !== 'all') {
         url += `?status=${statusFilter}`;
       }
@@ -58,7 +60,7 @@ const Invoices = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/invoices/${id}`, {
+      const response = await fetch(`${API_BASE}/invoices/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -76,7 +78,7 @@ const Invoices = () => {
   const updateInvoiceStatus = async (id: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/invoices/${id}/status`, {
+      const response = await fetch(`${API_BASE}/invoices/${id}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
