@@ -10,7 +10,7 @@ import dashboardRoutes from './routes/dashboard.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 // Connect to database
 connectDB();
