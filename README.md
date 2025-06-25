@@ -2,6 +2,8 @@
 
 A full-stack web application for freelancers to manage invoices, clients, and payments. Built with Node.js, Express.js, MongoDB, React, and Tailwind CSS.
 
+[Live link](https://invoice-manager-33nb.onrender.com/)
+
 ## Features
 
 - **User Authentication**: Register and login with JWT-based authentication. Passwords are securely hashed.
