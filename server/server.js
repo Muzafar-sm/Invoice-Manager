@@ -6,6 +6,9 @@ import authRoutes from './routes/auth.js';
 import invoiceRoutes from './routes/invoices.js';
 import clientRoutes from './routes/clients.js';
 import dashboardRoutes from './routes/dashboard.js';
+import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -19,6 +22,26 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Helmet CSP setup
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+      scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+      imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+      fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+      connectSrc: ["'self'"],
+    },
+  })
+);
+
+// Serve static files from the frontend build
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const buildPath = path.join(__dirname, '../dist');
+app.use(express.static(buildPath));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/invoices', invoiceRoutes);
@@ -29,6 +52,11 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
+});
+
+// Serve index.html for all other routes (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
