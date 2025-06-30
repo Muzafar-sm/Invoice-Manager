@@ -66,7 +66,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { clientId, items, dueDate, notes, tax = 0, status = 'draft' } = req.body;
+    const { clientId, items, dueDate, notes, tax = 0, status = 'draft', logo } = req.body;
 
     // Verify client belongs to user
     const client = await Client.findOne({ _id: clientId, userId: req.user.id });
@@ -89,6 +89,7 @@ router.post('/', [
       dueDate,
       notes,
       status,
+      logo,
     });
 
     await invoice.save();
@@ -114,7 +115,7 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { clientId, items, dueDate, notes, tax = 0, status } = req.body;
+    const { clientId, items, dueDate, notes, tax = 0, status, logo } = req.body;
 
     // Verify client belongs to user
     const client = await Client.findOne({ _id: clientId, userId: req.user.id });
@@ -137,6 +138,7 @@ router.put('/:id', [
         dueDate,
         notes,
         ...(status && { status }),
+        ...(logo !== undefined && { logo }),
       },
       { new: true }
     ).populate('clientId', 'name email company');

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 interface Client {
   _id: string;
@@ -23,16 +24,19 @@ interface InvoiceData {
   items: InvoiceItem[];
   dueDate: string;
   notes: string;
-  tax: number;
+  taxPercent: number;
+  discount: number;
+  discountType: 'percent' | 'fixed';
   status: string;
+  currency: 'USD' | 'JPY' | 'AED' | 'INR';
 }
-
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const InvoiceForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
+  const location = useLocation();
 
   const [clients, setClients] = useState<Client[]>([]);
   const [formData, setFormData] = useState<InvoiceData>({
@@ -40,11 +44,20 @@ const InvoiceForm = () => {
     items: [{ description: '', quantity: 1, rate: 0, amount: 0 }],
     dueDate: '',
     notes: '',
-    tax: 0,
+    taxPercent: 0,
+    discount: 0,
+    discountType: 'percent',
     status: 'draft',
+    currency: 'USD',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [logo, setLogo] = useState<string | null>(null);
+  const [autoDownload, setAutoDownload] = useState(false);
+
+  const isInvoiceLoaded = isEdit
+    ? formData.clientId && formData.items.length > 0 && formData.dueDate
+    : true;
 
   useEffect(() => {
     fetchClients();
@@ -59,7 +72,19 @@ const InvoiceForm = () => {
         dueDate: date.toISOString().split('T')[0],
       }));
     }
-  }, [id, isEdit]);
+    // Check for ?download=1
+    if (location.search.includes('download=1')) {
+      setAutoDownload(true);
+    }
+  }, [id, isEdit, location.search]);
+
+  useEffect(() => {
+    if (autoDownload && isInvoiceLoaded) {
+      handleDownloadPDF();
+      setAutoDownload(false); // Prevent repeated downloads
+    }
+    // eslint-disable-next-line
+  }, [autoDownload, isInvoiceLoaded]);
 
   const fetchClients = async () => {
     try {
@@ -95,9 +120,13 @@ const InvoiceForm = () => {
           items: invoice.items,
           dueDate: new Date(invoice.dueDate).toISOString().split('T')[0],
           notes: invoice.notes || '',
-          tax: invoice.tax || 0,
+          taxPercent: invoice.taxPercent || 0,
+          discount: invoice.discount || 0,
+          discountType: invoice.discountType || 'percent',
           status: invoice.status || 'draft',
+          currency: invoice.currency || 'USD',
         });
+        setLogo(invoice.logo || null);
       }
     } catch (error) {
       console.error('Error fetching invoice:', error);
@@ -136,8 +165,20 @@ const InvoiceForm = () => {
     return formData.items.reduce((sum, item) => sum + item.amount, 0);
   };
 
+  const calculateTax = () => {
+    return (calculateSubtotal() * (formData.taxPercent || 0)) / 100;
+  };
+
+  const calculateDiscount = () => {
+    if (formData.discountType === 'percent') {
+      return (calculateSubtotal() * (formData.discount || 0)) / 100;
+    } else {
+      return formData.discount || 0;
+    }
+  };
+
   const calculateTotal = () => {
-    return calculateSubtotal() + formData.tax;
+    return calculateSubtotal() + calculateTax() - calculateDiscount();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,7 +208,7 @@ const InvoiceForm = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, logo }),
       });
 
       const data = await response.json();
@@ -187,8 +228,102 @@ const InvoiceForm = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: formData.currency || 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
+  };
+
+  // Drag and drop handlers for logo upload
+  const handleLogoDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLogo(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLogo(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  // PDF Generation
+  const handleDownloadPDF = async () => {
+    const doc = new jsPDF();
+    const margin = 15;
+    let y = margin;
+
+    // Add logo if present
+    if (logo) {
+      // Place logo at top right
+      //const imgProps = (doc as any).getImageProperties ? (doc as any).getImageProperties(logo) : null;
+      const imgWidth = 40;
+      const imgHeight = 20;
+      doc.addImage(logo, 'PNG', 180 - imgWidth, y, imgWidth, imgHeight);
+    }
+
+    // Invoice Title
+    doc.setFontSize(18);
+    doc.text('Invoice', margin, y + 10);
+    y += 20;
+
+    // Client Info
+    const client = clients.find(c => c._id === formData.clientId);
+    if (client) {
+      doc.setFontSize(12);
+      doc.text(`Client: ${client.name}`, margin, y);
+      if (client.company) doc.text(`Company: ${client.company}`, margin, y + 7);
+      if (client.email) doc.text(`Email: ${client.email}`, margin, y + 14);
+      if (client.phone) doc.text(`Phone: ${client.phone}`, margin, y + 21);
+      if (client.address) doc.text(`Address: ${client.address}`, margin, y + 28);
+      y += 35;
+    }
+
+    // Invoice Items Table
+    doc.setFontSize(12);
+    doc.text('Items:', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.text('Description', margin, y);
+    doc.text('Qty', margin + 60, y);
+    doc.text('Rate', margin + 80, y);
+    doc.text('Amount', margin + 110, y);
+    y += 5;
+    formData.items.forEach(item => {
+      doc.text(item.description, margin, y);
+      doc.text(item.quantity.toString(), margin + 60, y);
+      doc.text(item.rate.toFixed(2), margin + 80, y);
+      doc.text(item.amount.toFixed(2), margin + 110, y);
+      y += 7;
+    });
+    y += 5;
+    doc.text(`Subtotal: ${formatCurrency(calculateSubtotal())}`, margin, y);
+    y += 7;
+    doc.text(`Tax (${formData.taxPercent}%): ${formatCurrency(calculateTax())}`, margin, y);
+    y += 7;
+    doc.text(`Discount: -${formatCurrency(calculateDiscount())}`, margin, y);
+    y += 7;
+    doc.text(`Total: ${formatCurrency(calculateTotal())}`, margin, y);
+    y += 10;
+    if (formData.notes) {
+      doc.text('Notes:', margin, y);
+      y += 7;
+      doc.text(formData.notes, margin, y);
+    }
+    doc.save('invoice.pdf');
   };
 
   return (
@@ -323,18 +458,17 @@ const InvoiceForm = () => {
                     Rate
                   </label>
                   <input
-  type="number"
-  min="0"
-  step="0.01"
-  placeholder='0.00'
-  value={item.rate === 0 ? "" : item.rate}
-  onChange={(e) => {
-    const value = e.target.value;
-    handleItemChange(index, 'rate', value === "" ? 0 : parseFloat(value));
-  }}
-  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-/>
-
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder='0.00'
+                    value={item.rate === 0 ? "" : item.rate}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleItemChange(index, 'rate', value === "" ? 0 : parseFloat(value));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
 
                 <div className="md:col-span-2">
@@ -384,23 +518,86 @@ const InvoiceForm = () => {
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
               </div>
-              
               <div className="flex justify-between items-center">
-                <label htmlFor="tax" className="text-gray-600">Tax:</label>
-                <div className="flex items-center">
-                  <span className="mr-2">$</span>
+                <label htmlFor="taxPercent" className="text-gray-600">Tax %:</label>
+                <input
+                  type="number"
+                  id="taxPercent"
+                  min="0"
+                  placeholder='0.00'
+                  max="100"
+                  step="0.01"
+                  value={formData.taxPercent === 0 ? "" : formData.taxPercent}
+                  onChange={(e)=>{
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, taxPercent: value === "" ? 0 : parseFloat(value) }));
+                  }}
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex justify-between items-center">
+                <label className="text-gray-600">Discount:</label>
+                <div className="flex items-center space-x-2">
                   <input
                     type="number"
-                    id="tax"
                     min="0"
                     step="0.01"
-                    value={formData.tax}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tax: parseFloat(e.target.value) || 0 }))}
+                    placeholder='0.00'
+                    value={formData.discount === 0 ? "" : formData.discount}
+                    onChange={
+                      (e) => {
+                        const value = e.target.value;
+                        setFormData(prev => ({ ...prev, discount: value === "" ? 0 : parseFloat(value) }));
+                      }
+                    }
                     className="w-20 px-2 py-1 border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <select
+                    value={formData.discountType}
+                    onChange={e => setFormData(prev => ({ ...prev, discountType: e.target.value as 'percent' | 'fixed' }))}
+                    className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="percent">%</option>
+                    <option value="fixed">{formData.currency}</option>
+                  </select>
                 </div>
               </div>
-              
+              <div className="flex flex-col gap-2">
+  <label className="text-gray-600">Currency:</label>
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    {['USD', 'JPY', 'AED', 'INR'].map(currency => {
+      const currencyLabelMap: Record<string, string> = {
+        USD: 'US Dollar ($)',
+        JPY: 'Yen (¥)',
+        AED: 'Dirham (د.إ)',
+        INR: 'Rupee (₹)'
+      };
+
+      const isSelected = formData.currency === currency;
+
+      return (
+        <button
+          key={currency}
+          type="button"
+          onClick={() => setFormData(prev => ({ ...prev, currency: currency as 'USD' | 'JPY' | 'AED' | 'INR' }))}
+          className={`px-4 py-2 rounded border text-sm font-medium
+            ${isSelected ? 'bg-blue-500 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}
+            hover:shadow-md transition duration-150 ease-in-out`}
+        >
+          {currencyLabelMap[currency]}
+        </button>
+      );
+    })}
+  </div>
+</div>
+  <div className="flex justify-between">
+                <span className="text-gray-600">Tax:</span>
+                <span>{formatCurrency(calculateTax())}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Discount:</span>
+                <span>-{formatCurrency(calculateDiscount())}</span>
+              </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
@@ -410,6 +607,37 @@ const InvoiceForm = () => {
             </div>
           </div>
         </div>
+
+        {/* Logo Upload Area */}
+        <div
+          className="border-2 border-dashed border-gray-300 rounded p-4 flex flex-col items-center justify-center mb-4 cursor-pointer hover:border-blue-400"
+          onDrop={handleLogoDrop}
+          onDragOver={handleDragOver}
+          onClick={() => document.getElementById('logo-upload-input')?.click()}
+          style={{ minHeight: 100 }}
+        >
+          {logo ? (
+            <img src={logo} alt="Logo Preview" style={{ maxHeight: 60, maxWidth: 120, objectFit: 'contain' }} />
+          ) : (
+            <span className="text-gray-400">Drag & drop a logo here, or click to select</span>
+          )}
+          <input
+            id="logo-upload-input"
+            type="file"
+            accept="image/*"
+            onChange={handleLogoChange}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        {/* Download PDF Button */}
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
+        >
+          Download PDF
+        </button>
 
         <div className="flex justify-end space-x-4">
           <button

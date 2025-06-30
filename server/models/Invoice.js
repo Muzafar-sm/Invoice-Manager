@@ -21,6 +21,11 @@ const invoiceItemSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
+  logo:{
+    type: String,
+    required: false,
+    min: 0,
+  }
 });
 
 const invoiceSchema = new mongoose.Schema({
@@ -72,6 +77,9 @@ const invoiceSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true,
+  },
+  logo: {
+    type: String, // Data URL or image path
   },
 }, {
   timestamps: true,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Download } from 'lucide-react';
 
 interface Invoice {
   _id: string;
@@ -15,7 +15,6 @@ interface Invoice {
   dueDate: string;
   createdAt: string;
 }
-
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const Invoices = () => {
@@ -270,6 +269,13 @@ const Invoices = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
+                        <Link
+                          to={`/invoices/${invoice._id}/edit?download=1`}
+                          className="text-green-600 hover:text-green-900 p-1"
+                          title="Download PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Link>
                       </div>
                     </td>
                   </tr>
