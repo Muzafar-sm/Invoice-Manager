@@ -20,10 +20,13 @@ import {
   Zap
 } from 'lucide-react';
 import { getApiBase } from '../lib/api';
+import { formatCurrency, formatAmountsByCurrency } from '../lib/currency';
 
 interface DashboardStats {
   totalEarnings: number;
   unpaidAmount: number;
+  earningsByCurrency?: Record<string, number>;
+  unpaidByCurrency?: Record<string, number>;
   totalClients: number;
   recentInvoices: any[];
   overdueInvoices: any[];
@@ -35,6 +38,8 @@ interface DashboardStats {
     unpaidInvoices: number;
     overdueCount: number;
   };
+  paidCountByCurrency?: Record<string, number>;
+  unpaidCountByCurrency?: Record<string, number>;
 }
 
 const API_BASE = getApiBase();
@@ -65,13 +70,6 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
   };
 
   const formatDate = (date: string) => {
@@ -171,8 +169,12 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-sm font-medium">Total Earnings</p>
-              <p className="text-3xl font-bold mt-1">
-                {formatCurrency(stats?.totalEarnings || 0)}
+              <p className="text-2xl sm:text-3xl font-bold mt-1 leading-tight">
+                {formatAmountsByCurrency(
+                  stats?.earningsByCurrency || {},
+                  stats?.totalEarnings ?? 0,
+                  'USD'
+                )}
               </p>
               <div className="flex items-center mt-2">
                 {growthRate >= 0 ? (
@@ -195,8 +197,12 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-amber-100 text-sm font-medium">Unpaid Amount</p>
-              <p className="text-3xl font-bold mt-1">
-                {formatCurrency(stats?.unpaidAmount || 0)}
+              <p className="text-2xl sm:text-3xl font-bold mt-1 leading-tight">
+                {formatAmountsByCurrency(
+                  stats?.unpaidByCurrency || {},
+                  stats?.unpaidAmount ?? 0,
+                  'USD'
+                )}
               </p>
               <p className="text-amber-200 text-sm mt-2">
                 {stats?.stats.unpaidInvoices || 0} pending invoices
@@ -306,10 +312,23 @@ const Dashboard = () => {
             <CreditCard className="h-5 w-5 text-blue-500" />
           </div>
           <div className="space-y-2">
-            <p className="text-3xl font-bold text-gray-900">
-              {formatCurrency(stats?.stats.totalInvoices ? (stats.totalEarnings / stats.stats.totalInvoices) : 0)}
-            </p>
-            <p className="text-sm text-gray-600">Per invoice</p>
+            {stats?.earningsByCurrency && Object.keys(stats.earningsByCurrency).length > 0 ? (
+              <div className="space-y-2">
+                {Object.entries(stats.earningsByCurrency).map(([curr, amt]) => {
+                  const count = stats.paidCountByCurrency?.[curr] || 1;
+                  return (
+                    <p key={curr} className="text-lg font-bold text-gray-900">
+                      {formatCurrency(amt / count, curr)} <span className="text-sm font-normal text-gray-500">({curr})</span>
+                    </p>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-gray-900">
+                {formatCurrency(stats?.stats.paidInvoices ? (stats.totalEarnings / stats.stats.paidInvoices) : 0, 'USD')}
+              </p>
+            )}
+            <p className="text-sm text-gray-600">Per paid invoice</p>
             <div className="flex items-center mt-4">
               <div className="flex-1 bg-blue-100 rounded-full h-2">
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full w-3/4"></div>
@@ -330,19 +349,31 @@ const Dashboard = () => {
                 <div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>
                 <span className="text-sm text-gray-600">Collected</span>
               </div>
-              <span className="text-sm font-medium">{formatCurrency(stats?.totalEarnings || 0)}</span>
+              <span className="text-sm font-medium text-right max-w-[60%]">
+                {formatAmountsByCurrency(
+                  stats?.earningsByCurrency || {},
+                  stats?.totalEarnings ?? 0,
+                  'USD'
+                )}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>
                 <span className="text-sm text-gray-600">Pending</span>
               </div>
-              <span className="text-sm font-medium">{formatCurrency(stats?.unpaidAmount || 0)}</span>
+              <span className="text-sm font-medium text-right max-w-[60%]">
+                {formatAmountsByCurrency(
+                  stats?.unpaidByCurrency || {},
+                  stats?.unpaidAmount ?? 0,
+                  'USD'
+                )}
+              </span>
             </div>
             <div className="pt-2">
               <p className="text-2xl font-bold text-gray-900">
-                {stats?.totalEarnings && stats?.unpaidAmount ? 
-                  Math.round((stats.totalEarnings / (stats.totalEarnings + stats.unpaidAmount)) * 100) : 0}%
+                {stats?.totalEarnings && (stats.totalEarnings + (stats.unpaidAmount || 0)) > 0
+                  ? Math.round((stats.totalEarnings / (stats.totalEarnings + stats.unpaidAmount)) * 100) : 0}%
               </p>
               <p className="text-sm text-gray-600">Collection rate</p>
             </div>
@@ -383,7 +414,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">{formatCurrency(invoice.total)}</p>
+                      <p className="font-bold text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</p>
                       <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(invoice.status)}`}>
                         {invoice.status}
                       </span>
@@ -432,7 +463,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">{formatCurrency(invoice.total)}</p>
+                      <p className="font-bold text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</p>
                       <p className="text-sm text-amber-600 font-medium">Due {formatDate(invoice.dueDate)}</p>
                     </div>
                   </div>
@@ -473,7 +504,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">{formatCurrency(invoice.total)}</p>
+                    <p className="font-bold text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</p>
                     <p className="text-sm text-red-600 font-medium">Overdue since {formatDate(invoice.dueDate)}</p>
                   </div>
                 </div>

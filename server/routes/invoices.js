@@ -66,7 +66,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { clientId, items, dueDate, notes, tax = 0, status = 'draft', logo } = req.body;
+    const { clientId, items, dueDate, notes, tax = 0, status = 'draft', logo, currency = 'USD' } = req.body;
 
     // Verify client belongs to user
     const client = await Client.findOne({ _id: clientId, userId: req.user.id });
@@ -90,6 +90,7 @@ router.post('/', [
       notes,
       status,
       logo,
+      currency: ['USD', 'JPY', 'AED', 'INR'].includes(currency) ? currency : 'USD',
     });
 
     await invoice.save();
@@ -115,7 +116,7 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { clientId, items, dueDate, notes, tax = 0, status, logo } = req.body;
+    const { clientId, items, dueDate, notes, tax = 0, status, logo, currency } = req.body;
 
     // Verify client belongs to user
     const client = await Client.findOne({ _id: clientId, userId: req.user.id });
@@ -139,6 +140,7 @@ router.put('/:id', [
         notes,
         ...(status && { status }),
         ...(logo !== undefined && { logo }),
+        ...(currency && ['USD', 'JPY', 'AED', 'INR'].includes(currency) && { currency }),
       },
       { new: true }
     ).populate('clientId', 'name email company');

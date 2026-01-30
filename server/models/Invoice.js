@@ -81,6 +81,11 @@ const invoiceSchema = new mongoose.Schema({
   logo: {
     type: String, // Data URL or image path
   },
+  currency: {
+    type: String,
+    enum: ['USD', 'JPY', 'AED', 'INR'],
+    default: 'USD',
+  },
 }, {
   timestamps: true,
 });

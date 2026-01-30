@@ -14,8 +14,10 @@ interface Invoice {
   status: string;
   dueDate: string;
   createdAt: string;
+  currency?: string;
 }
 import { getApiBase } from '../lib/api';
+import { formatCurrency } from '../lib/currency';
 
 const API_BASE = getApiBase();
 
@@ -104,13 +106,6 @@ const Invoices = () => {
     invoice.clientId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (invoice.clientId.company && invoice.clientId.company.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -240,7 +235,7 @@ const Invoices = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatCurrency(invoice.total)}
+                      {formatCurrency(invoice.total, invoice.currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
