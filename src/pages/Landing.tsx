@@ -10,6 +10,9 @@ import {
   Download,
   Zap,
   ArrowRight,
+  UserPlus,
+  Plus,
+  ChevronRight,
 } from 'lucide-react';
 
 const Landing = () => {
@@ -105,6 +108,121 @@ const Landing = () => {
             >
               Sign in
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works - Create invoice flow */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+              Create your first invoice in 2 steps
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Add your clients first, then generate professional invoices in minutes.
+            </p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+            {/* Step 1: Add Client */}
+            <div className="flex-1 max-w-md w-full">
+              <div className="relative">
+                <div className="absolute -top-3 -left-3 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg z-10">
+                  1
+                </div>
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden hover:border-slate-300 transition-colors">
+                  <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                      <UserPlus className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900">Add a client</h3>
+                      <p className="text-sm text-slate-500">Clients</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 rounded w-1/5"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg"></div>
+                    </div>
+                    <button className="w-full py-3 bg-emerald-500 text-white font-medium rounded-lg flex items-center justify-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Client
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-center text-slate-600 mt-4 font-medium">
+                Enter name, email, company & contact details
+              </p>
+            </div>
+
+            {/* Arrow connector */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-2">
+              <div className="hidden lg:flex w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 items-center justify-center">
+                <ChevronRight className="h-8 w-8 text-slate-500" />
+              </div>
+              <div className="lg:hidden flex w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 items-center justify-center rotate-90">
+                <ChevronRight className="h-8 w-8 text-slate-500" />
+              </div>
+              <span className="text-sm font-medium text-slate-500">then</span>
+            </div>
+
+            {/* Step 2: Create Invoice */}
+            <div className="flex-1 max-w-md w-full">
+              <div className="relative">
+                <div className="absolute -top-3 -left-3 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg z-10">
+                  2
+                </div>
+                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden hover:border-slate-300 transition-colors">
+                  <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900">Create invoice</h3>
+                      <p className="text-sm text-slate-500">New Invoice</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg flex items-center px-3">
+                        <Users className="h-4 w-4 text-slate-400 mr-2" />
+                        <span className="text-slate-400 text-sm">Select client</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg"></div>
+                      <div className="h-10 bg-slate-100 rounded-lg"></div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 h-10 bg-slate-100 rounded-lg"></div>
+                      <button className="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg text-sm flex items-center gap-1">
+                        <Plus className="h-3 w-3" />
+                        Item
+                      </button>
+                    </div>
+                    <button className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg">
+                      Generate Invoice
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-center text-slate-600 mt-4 font-medium">
+                Pick client, add line items & download PDF
+              </p>
+            </div>
           </div>
         </div>
       </section>
