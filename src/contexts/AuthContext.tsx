@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getApiBase } from '../lib/api';
 
 interface User {
   id: string;
@@ -34,11 +35,18 @@ export const useAuth = () => {
   return context;
 };
 
+// Fetch with timeout to prevent infinite hangs (e.g. cold starts, unreachable server)
+const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs = 15000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout));
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_URL || '/api';
+  const API_BASE = getApiBase();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -71,42 +79,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getErrorMessage = (data: { message?: string; errors?: Array<{ msg: string }> }) => {
+    if (data.message) return data.message;
+    if (data.errors?.length) return data.errors.map((e) => e.msg).join('. ');
+    return 'Request failed';
+  };
+
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(getErrorMessage(data) || 'Login failed');
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+        throw err;
+      }
+      throw new Error('Network error. Is the server running?');
     }
-
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
   };
 
   const register = async (userData: RegisterData) => {
-    const response = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Registration failed');
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(getErrorMessage(data) || 'Registration failed');
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+        throw err;
+      }
+      throw new Error('Network error. Is the server running?');
     }
-
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
   };
 
   const logout = () => {

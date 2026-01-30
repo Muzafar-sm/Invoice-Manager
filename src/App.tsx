@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -38,34 +39,46 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <Navigate to="/dashboard" /> : <>{children}</>;
 };
 
+const LandingRoute = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  return user ? <Navigate to="/dashboard" /> : <Landing />;
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Navigate to="/dashboard" />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="invoices" element={<Invoices />} />
-            <Route path="invoices/new" element={<InvoiceForm />} />
-            <Route path="invoices/:id/edit" element={<InvoiceForm />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="clients/new" element={<ClientForm />} />
-            <Route path="clients/:id/edit" element={<ClientForm />} />
+          <Route path="/" element={<Outlet />}>
+            <Route index element={<LandingRoute />} />
+            <Route path="login" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="register" element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            } />
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="invoices" element={<Invoices />} />
+              <Route path="invoices/new" element={<InvoiceForm />} />
+              <Route path="invoices/:id/edit" element={<InvoiceForm />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="clients/new" element={<ClientForm />} />
+              <Route path="clients/:id/edit" element={<ClientForm />} />
+            </Route>
           </Route>
         </Routes>
       </Router>

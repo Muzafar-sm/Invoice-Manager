@@ -19,6 +19,7 @@ import {
   Activity,
   Zap
 } from 'lucide-react';
+import { getApiBase } from '../lib/api';
 
 interface DashboardStats {
   totalEarnings: number;
@@ -36,7 +37,7 @@ interface DashboardStats {
   };
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = getApiBase();
 
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);

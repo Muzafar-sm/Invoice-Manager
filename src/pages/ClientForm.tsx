@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Building, Phone, MapPin } from 'lucide-react';
+import { getApiBase } from '../lib/api';
 
 interface ClientData {
   name: string;
@@ -10,7 +11,7 @@ interface ClientData {
   address: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = getApiBase();
 
 const ClientForm = () => {
   const navigate = useNavigate();

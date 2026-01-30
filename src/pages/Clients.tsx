@@ -12,7 +12,9 @@ interface Client {
   createdAt: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { getApiBase } from '../lib/api';
+
+const API_BASE = getApiBase();
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { getApiBase } from '../lib/api';
 
 interface Client {
   _id: string;
@@ -30,7 +31,7 @@ interface InvoiceData {
   status: string;
   currency: 'USD' | 'JPY' | 'AED' | 'INR';
 }
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = getApiBase();
 
 const InvoiceForm = () => {
   const navigate = useNavigate();
